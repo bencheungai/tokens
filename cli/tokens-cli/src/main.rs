@@ -2,6 +2,7 @@ mod antigravity;
 mod auth;
 mod commands;
 mod cursor;
+mod cursor_unified;
 mod device;
 mod hindsight;
 mod paths;
@@ -151,6 +152,19 @@ enum Commands {
 
 #[derive(Subcommand)]
 enum CursorSubcommand {
+    #[command(about = "Import post-merge Cursor usage from a Grok unified billing CSV (offline)")]
+    Import {
+        #[arg(help = "CSV exported from https://grok.com/dashboard/usage")]
+        file: PathBuf,
+        #[arg(long, help = "Expected User Email in the export")]
+        email: String,
+        #[arg(long, help = "Exclusive RFC 3339 cutoff, after the last legacy Cursor event")]
+        after: String,
+        #[arg(long, help = "Cursor cache directory to receive the supplementary usage file")]
+        output_dir: PathBuf,
+        #[arg(long, help = "Validate and preview without writing any files")]
+        dry_run: bool,
+    },
     #[command(about = "Login to Cursor with a browser session token")]
     Login {
         #[arg(long, help = "Label for this Cursor account (e.g., work, personal)")]
@@ -2750,6 +2764,13 @@ fn run_submit_command(
 
 fn run_cursor_command(subcommand: CursorSubcommand) -> Result<()> {
     match subcommand {
+        CursorSubcommand::Import {
+            file,
+            email,
+            after,
+            output_dir,
+            dry_run,
+        } => cursor_unified::run_import(&file, &email, &after, &output_dir, dry_run),
         CursorSubcommand::Login { name } => cursor::run_cursor_login(name),
         CursorSubcommand::Logout {
             name,
